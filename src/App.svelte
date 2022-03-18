@@ -107,6 +107,56 @@ function handleTheEventFromInner(event) {
 
 //Nested event from Inner
 import Outer from '../src/components/Outer.svelte';
+
+//////////////////////////////////////////////////
+//////////////////////////////////////////////////
+//////////////////////////////////////////////////
+
+//Bindings
+//When you want to be able to changes values from an element and up into the component, we can use "bind"
+let bindingName = 'Name';
+
+//bind=value takes care of converting input into number values, so we dont need input.value (we need this normally apparently lol)
+let numA = 1;
+let numB = 2;
+
+//Checkboxes can be used to toggle between states of a value
+let checkbox = false;
+
+//Group inputs
+
+	let scoops = 1;
+	let flavours = ['Mint choc chip'];
+
+	let menu = [
+		'Cookies and cream',
+		'Mint choc chip',
+		'Raspberry ripple'
+	];
+
+	function join(flavours) {
+		if (flavours.length === 1) return flavours[0];
+		return `${flavours.slice(0, -1).join(', ')} and ${flavours[flavours.length - 1]}`;
+	}
+
+//Text area inputs.. den viser bare teksten i et felt.. intet sejt :D
+let textValue = `Some words are *italic*, some are **bold**`;
+
+//Select bindings
+let questions = [
+		{ id: 1, text: `Where did you go to school?` },
+		{ id: 2, text: `What is your mother's name?` },
+		{ id: 3, text: `What is another personal fact that an attacker could easily find with Google?` }
+	];
+
+	let selected;
+
+	let answer = '';
+
+	function handleSubmit() {
+		alert(`answered question ${selected.id} (${selected.text}) with "${answer}"`);
+	}
+
 </script>
 
 
@@ -183,9 +233,98 @@ import Outer from '../src/components/Outer.svelte';
 	<p>Outer -v- </p>
 	<Outer on:myevent={handleTheEventFromInner}/>
 
+	<div id="binding">
+	<p></p>
+	<input bind:value={bindingName}> 
+	<p>Hello {bindingName} </p>
+
+	<label>
+		<input type=number bind:value={numA} min=0 max=10> <!-- just the box with the number and arrows up and down-->
+		<input type=range bind:value={numA} min=0 max=10> <!-- Makes the slider -->
+	</label>
+	
+
+	<label>
+		<input type=number bind:value={numB} min=0 max=10> <!-- just the box with the number and arrows up and down-->
+		<input type=range bind:value={numB} min=0 max=10> <!-- Makes the slider -->
+	</label>
+	<p>{numA} + {numB} = {numA + numB}</p>
+
+
+	<label>
+		<input type=checkbox bind:checked={checkbox}>
+		Yes! Send me all the spam you got
+	</label>
+	<button disabled={!checkbox} on:click={ () => {console.log("lol") }}>
+		Subscribe
+	</button>
+
+	<!-- Group binding-->
+		<h2>Size</h2>
+
+	<label>
+		<input type=radio bind:group={scoops} name="scoops" value={1}>
+		One scoop
+	</label>
+
+	<label>
+		<input type=radio bind:group={scoops} name="scoops" value={2}>
+		Two scoops
+	</label>
+
+	<label>
+		<input type=radio bind:group={scoops} name="scoops" value={3}>
+		Three scoops
+	</label>
+
+	<h2>Flavours</h2>
+
+	{#each menu as flavour} <!-- Hvert element af smagsvariant arrayet, lav en option, som opdaterer flavour array -->
+		<label>
+			<input type=checkbox bind:group={flavours} name="flavours" value={flavour}>
+			{flavour}
+		</label>
+	{/each}
+
+	{#if flavours.length === 0}
+		<p>Please select at least one flavour</p>
+	{:else if flavours.length > scoops}
+		<p>Can't order more flavours than scoops!</p>
+	{:else}
+		<p>
+			You ordered {scoops} {scoops === 1 ? 'scoop' : 'scoops'}
+			of {join(flavours)}
+		</p>
+	{/if}
 
 	
 
+	<textarea bind:value={textValue}></textarea>
+	
+	<!--Select bindings -->
+	<h2>Security questions</h2>
+
+	<form on:submit|preventDefault={handleSubmit}>	
+		<select bind:value={selected} on:change="{() => answer = 'LOL'}"> <!-- answer bliver reset hvis man skifter -->
+			<!-- Also, bind:value ændrer på værdien i script, og stemmer overens med værdien i selectboxen.-->
+			{#each questions as question} <!--Hvert spørgsmål laves til en option i vores -->
+				<option value={question}>
+					{question.text}
+				</option>
+			{/each}
+		</select>
+
+		<input bind:value={answer}> <!--Text input -->
+
+		<button disabled={!answer} type=submit> <!--Hvis answer er tomt, så skal den disables. -->
+			Submit
+		</button>
+	</form>
+
+<p>selected question {selected ? selected.id : '[waiting...]'}</p>
+
+
+	</div>
 </main>
 
 
@@ -199,6 +338,7 @@ import Outer from '../src/components/Outer.svelte';
 		margin: 0 auto;
 	}
 
+	
 	
 	h1 {
 		color: #ff3e00;
