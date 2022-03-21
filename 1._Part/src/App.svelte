@@ -157,6 +157,93 @@ let questions = [
 		alert(`answered question ${selected.id} (${selected.text}) with "${answer}"`);
 	}
 
+//LIFECYCLE
+//Lifecycles of components come in onMount and onDestroy (and more, but that aint homework lol)
+//onMount will launch a function when the component is created
+
+import { onMount } from 'svelte';
+
+	let photos = [];
+
+	onMount(async () => {
+		const res = await fetch(`https://jsonplaceholder.typicode.com/photos?_limit=20`);
+		photos = await res.json();
+		console.log(photos)
+	});
+
+	//onDestroy   MERE I UTILS.js OG TIMER.SVELTE
+	import Timer from '../src/components/Timer.svelte';
+
+	let openn = true;
+	let secondss = 0;
+
+	const toggle = () => (openn = !openn);
+	const handleTick = () => (secondss += 1);
+
+//beforeUpdate and afterUpdate
+//udfører en funktion LIGE INDEN og LIGE EFTER at DOM er blevet opdateret.
+//Det er godt til at updatere en scroll position og andre ting som er ikke er state-driven.
+//npm i elizabot  https://www.npmjs.com/package/elizabot
+
+	import Eliza from 'elizabot';
+	import { beforeUpdate, afterUpdate } from 'svelte';
+
+	let divv;
+	let autoscroll;
+
+	beforeUpdate(() => { //calculates a value right before the DOM update
+		autoscroll = divv && (divv.offsetHeight + divv.scrollTop) > (divv.scrollHeight - 20);
+	}); // = divv checks that the div even exists, followed by a check if the scroll is too great
+
+	afterUpdate(() => { //if value is true, scroll to the bottom of the chat ???
+		if (autoscroll) divv.scrollTo(0, divv.scrollHeight);
+	});
+
+	const eliza = new Eliza(); //instantiate the Eliza library. Remember to npm i elizabot
+
+	let comments = [ //the chat room
+		{ author: 'eliza', text: eliza.getInitial() }
+	];
+
+	function handleKeydown(event) {
+		if (event.key === 'Enter') { //when hitting the enter guy in the chat
+			const text = event.target.value; //the text is saved from the event.target.value
+			if (!text) return; //if null, dont do shit
+
+			comments = comments.concat({ //concat the comments with the input from user
+				author: 'user', //and set the author of the chat to user
+				text
+			});
+
+			event.target.value = ''; //make the textinput empty
+
+			const reply = eliza.transform(text); //from doc: returns a final phrase in case of a quit phrase
+			//basicly makes a reply.
+
+			setTimeout(() => {
+				comments = comments.concat({ //makes a placeholder comment and concats its to the list
+					author: 'eliza',
+					text: '...',
+					placeholder: true //gives it a placeholder value 
+				});
+
+				setTimeout(() => {
+					comments = comments.filter(comment => !comment.placeholder).concat({
+						author: 'eliza', //after small timeout, filter out the placeholder comment
+						text: reply //and insert a new one with the reply generated above
+					});
+				}, 500 + Math.random() * 500); //timing
+			}, 200 + Math.random() * 200);
+		}
+	}
+	//beforeUpdate afterUpdate done
+	//beforeUpdate afterUpdate done
+	//beforeUpdate afterUpdate done
+	//beforeUpdate afterUpdate done
+	//beforeUpdate afterUpdate done
+
+
+
 </script>
 
 
@@ -322,15 +409,99 @@ let questions = [
 	</form>
 
 <p>selected question {selected ? selected.id : '[waiting...]'}</p>
-
-
 	</div>
+
+	<h3>Photo album</h3>
+
+<div class="photos">
+	{#each photos as photo}
+		<figure>
+			<img src={photo.thumbnailUrl} alt={photo.title}>
+			<figcaption>{photo.title}</figcaption>
+		</figure>
+	{:else}
+		<!-- this block renders when photos.length === 0 -->
+		<p>loading...</p>
+	{/each}
+</div>
+
+
+<div><p>---------------------------</p>
+	<button on:click={toggle}> {openn ? 'Close' : 'Open'} Timer</button>
+	<p>
+		The Timer component has been open for
+		{secondss} {secondss === 1 ? 'second' : 'seconds'}
+	</p>
+	{#if openn}
+	<Timer callback={handleTick} />
+	{/if}
+</div>
+
+
+
+<div class="chat">
+	<h1>Eliza Chat</h1>
+
+	<div class="scrollable" bind:this={divv}> <!-- divv is a boolean-->
+		{#each comments as comment}
+			<article class={comment.author}>
+				<span>{comment.text}</span>
+			</article>
+		{/each}
+	</div>
+
+	<input on:keydown={handleKeydown}>
+</div>
+
+
 </main>
 
 
 
 
 <style>
+
+.chat {
+	
+		display: flex;
+		flex-direction: column;
+		height: 30%;
+		max-width: 320px;
+	}
+
+	.scrollable {
+		flex: 1 1 auto;
+		border-top: 1px solid #eee;
+		margin: 0 0 0.5em 0;
+		overflow-y: auto;
+	}
+
+	article {
+		margin: 0.5em 0;
+	}
+
+	.user {
+		text-align: right;
+	}
+
+	span {
+		padding: 0.5em 1em;
+		display: inline-block;
+	}
+
+	.eliza span {
+		background-color: #eee;
+		border-radius: 1em 1em 1em 0;
+	}
+
+	.user span {
+		background-color: #0074D9;
+		color: white;
+		border-radius: 1em 1em 0 1em;
+		word-break: break-all;
+	}
+
+
 	main {
 		text-align: center;
 		padding: 1em;
@@ -338,7 +509,17 @@ let questions = [
 		margin: 0 auto;
 	}
 
-	
+	.photos {
+		width: 100%;
+		display: grid;
+		grid-template-columns: repeat(5, 1fr);
+		grid-gap: 8px;
+	}
+
+	figure, img {
+		width: 100%;
+		margin: 0;
+	}
 	
 	h1 {
 		color: #ff3e00;
